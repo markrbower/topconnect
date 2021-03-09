@@ -14,6 +14,7 @@ db <- function( ... ) {
   # vault_key : the keyword for the vault secret (default: <project>_password)
   # host: the name of the database computer/server (default: localhost)
   # dbname: the name of the database to access (default: <project>)
+  library( SingletonsInR )
 
   args <- list( ... )
   # Defaults
@@ -50,10 +51,25 @@ db <- function( ... ) {
     conn <- DBI::dbConnect( RMySQL::MySQL(),
                             user=db_user,password=password,
                             host=host,dbname=dbname)
-  } else {
-    conn <- DBI::dbConnect( RMySQL::MySQL(),
-                            user=db_user,password=topsecret::get(name=vault_key),
-                            host=host,dbname=dbname)
+  } else { # First, look for a Singleton containing values
+    context <- SingletonInR$new()
+    contextNames <- names( context$value )
+    if ( 'hostname' %in% contextNames & 'password' %in% contextNames ) {
+      hostname <- context$value$hostname
+      password <- context$value$password
+      print( hostname )
+      print( password )
+      print( db_user )
+      print( dbname )
+      conn <- DBI::dbConnect( RMySQL::MySQL(),
+                              user=db_user,password=password,
+                              host=hostname,dbname=dbname)
+      print( "Connected" )
+    } else { # try to get info from the secret_vault
+      conn <- DBI::dbConnect( RMySQL::MySQL(),
+                              user=db_user,password=topsecret::get(name=vault_key),
+                              host=host,dbname=dbname)
+    }
   }
   
   return( conn )
