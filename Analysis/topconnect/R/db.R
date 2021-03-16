@@ -48,10 +48,12 @@ db <- function( ... ) {
   }
 
   if ( exists( "password" ) ) {
+    print( "password" )
     conn <- DBI::dbConnect( RMySQL::MySQL(),
                             user=db_user,password=password,
                             host=host,dbname=dbname)
   } else { # First, look for a Singleton containing values
+    print( "else" )
     context <- SingletonInR$new()
     contextNames <- names( context$value )
     if ( 'hostname' %in% contextNames & 'password' %in% contextNames ) {
@@ -66,6 +68,7 @@ db <- function( ... ) {
                               host=hostname,dbname=dbname)
       print( "Connected" )
     } else { # try to get info from the secret_vault
+      print( "no hostname or password" )
       conn <- DBI::dbConnect( RMySQL::MySQL(),
                               user=db_user,password=topsecret::get(name=vault_key),
                               host=host,dbname=dbname)
