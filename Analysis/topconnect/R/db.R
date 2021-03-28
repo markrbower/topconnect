@@ -46,29 +46,32 @@ db <- function( ... ) {
             "dbname"     = {dbname <-     args[[arg]]}
     )
   }
-
+  
+  #print( paste0( "db: user: ", db_user ) )
+  #print( paste0( "db: host: ", host ) )
+  #print( paste0( "db: pass: ", password ) )
+  #print( paste0( "db: dbname: ", dbname ) )
+  
   if ( exists( "password" ) ) {
-    print( "password" )
     conn <- DBI::dbConnect( RMySQL::MySQL(),
                             user=db_user,password=password,
                             host=host,dbname=dbname)
   } else { # First, look for a Singleton containing values
-    print( "else" )
     context <- SingletonInR$new()
+    #print( paste0( "db: ", names(context) ) )
     contextNames <- names( context$value )
-    if ( 'hostname' %in% contextNames & 'password' %in% contextNames ) {
-      hostname <- context$value$hostname
+    if ( 'host' %in% contextNames & 'password' %in% contextNames ) {
+      host <- context$value$host
       password <- context$value$password
-      print( hostname )
-      print( password )
-      print( db_user )
-      print( dbname )
+      #print( host )
+      #print( password )
+      #print( db_user )
+      #print( dbname )
       conn <- DBI::dbConnect( RMySQL::MySQL(),
                               user=db_user,password=password,
-                              host=hostname,dbname=dbname)
-      print( "Connected" )
+                              host=host,dbname=dbname)
     } else { # try to get info from the secret_vault
-      print( "no hostname or password" )
+      #print( paste0( "db: getting password from valut"))
       conn <- DBI::dbConnect( RMySQL::MySQL(),
                               user=db_user,password=topsecret::get(name=vault_key),
                               host=host,dbname=dbname)

@@ -43,6 +43,7 @@ getContextFromTaskTable <- function( conn, ... ) {
   context$signalType <- parseArg( args, 'signalType' )
   context$centerTime <- parseArg( args, 'centerTime' )
   context$service <- parseArg( args, 'service' )
+  context$db_user <- parseArg( args, 'db_user' )
   context$hostname <- parseArg( args, 'hostname' )
   if ( nchar( context$service ) == 0 ) { # try 'dbName'
     context$service <- parseArg( args, 'dbName' )

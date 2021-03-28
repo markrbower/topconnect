@@ -10,6 +10,7 @@ markAsProcessed <- function( dbName, table, subject, channel, suid, timestamp, f
   #' conn <- db( 'testProject' )
   #' markAsProcessed( conn, case, flag=1 )
 
+  print( "In markAsProcessed" )
   conn <- topconnect::db( dbName, host=hostname, password=password )
   query <- paste0( 'update ', table, ' set done=',flag,' where subject=\'',subject,'\' AND session=\'',suid,'\' AND channel=\'',channel,'\' AND timestamp=',timestamp,';' )
   DBI::dbGetQuery( conn, query )

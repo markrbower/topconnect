@@ -1,4 +1,4 @@
-databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL ) {
+databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, dbuser='root', host='localhost', password='' ) {
   #' databaseInsertBuffer
   #' 
   #' @export
@@ -34,6 +34,10 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL ) {
   updateLimit <- limit
   query <- ''
   hasValues <- 0
+  dbname <- dbName
+  hostname <- host
+  dbuser <- dbuser
+  password <- password
   
   initialize <- function() {
     query <<- paste0( "insert into ", insertTable, " (" )
@@ -46,6 +50,7 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL ) {
     # If 'fields' is a named vector, assign values based on field names.
     # Else, assume that the values are entered in the order of 'fields' at initialization.
 #    print( updateCount )
+    #print( "DIB: insert" )
     fieldnames <- names( values )
     if ( is.null( fieldnames ) ) {
       fieldnames <<- fields
@@ -97,6 +102,7 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL ) {
     query <<- paste0( query, str  )
     query <<- paste0( query, ")" )
     updateCount <<- updateCount + 1
+    #print( paste0( "DIB: ", updateCount ) )
     if ( updateCount %% updateLimit == 0 ) {
 #      print( updateCount )
       flush()
@@ -105,6 +111,7 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL ) {
   }
   
   flush <- function() {
+    #print( "DIB: flush")
     if ( !is.null( updateFields ) ) {
       updateString <- paste0(updateFields,collapse=",")
       if ( nchar(updateString) > 0 ) {
@@ -113,10 +120,11 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL ) {
     } else {
       query <<- paste0( query, ";" )
     }
+    #print( paste0( "DIB: flush: ", dbname ) )
     if ( hasValues==1 ) {
 #      print(query)
       tryCatch({
-        conn1 <- topconnect::db( dbName )
+        conn1 <- topconnect::db( dbname=dbname, host=hostname, db_user=dbuser, password=password )
         DBI::dbGetQuery( conn1, query )
       }, error=function(e) {
         tryCatch({
@@ -124,7 +132,7 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL ) {
           write( query, file="DIB_error1.txt", append=TRUE)
           print( query )
           
-          conn2 <- topconnect::db( dbName )
+          conn2 <- topconnect::db( dbname=dbname, host=hostname, db_user=dbuser, password=password )
           DBI::dbGetQuery( conn2, query )
         }, error=function(e) {
           tryCatch({
@@ -132,7 +140,7 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL ) {
             write( query, file="DIB_error2.txt", append=TRUE)
             print( query )
             
-            conn3 <- topconnect::db( dbName )            
+            conn3 <- topconnect::db( dbname=dbname, host=hostname, db_user=dbuser, password=password )            
             DBI::dbGetQuery( conn3, query )
           }, error=function(e) {
             print( 'Failed to connect to database.')
