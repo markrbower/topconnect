@@ -7,7 +7,11 @@ currentProcessedLevel <- function( dbName, table, subject, channel, suid, timest
 
   T <- timestamp
   
-  conn <- topconnect::db( dbname=dbName, host=hostname, password=password )
+  print( paste0( "currentProcessedLevel: dbName: ", dbName ) )
+  print( paste0( "currentProcessedLevel: hostname: ", hostname ) )
+  print( paste0( "currentProcessedLevel: password: ", password ) )
+  
+  conn <- topconnect::db( db_user="root", dbname=dbName, host=hostname, password=password )
   # If an entry doesn't exist, make one.
   query <- paste0( 'select count(*) as count from ', table, ' where subject=\'',subject,'\' and channel=\'', channel,'\' and session=\'', suid, '\' and timestamp=', T,';' )
   rs <- DBI::dbGetQuery( conn, query )
