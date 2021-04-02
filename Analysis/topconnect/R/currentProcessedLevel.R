@@ -7,9 +7,9 @@ currentProcessedLevel <- function( dbName, table, subject, channel, suid, timest
 
   T <- timestamp
   
-  print( paste0( "currentProcessedLevel: dbName: ", dbName ) )
-  print( paste0( "currentProcessedLevel: hostname: ", hostname ) )
-  print( paste0( "currentProcessedLevel: password: ", password ) )
+  #print( paste0( "currentProcessedLevel: dbName: ", dbName ) )
+  #print( paste0( "currentProcessedLevel: hostname: ", hostname ) )
+  #print( paste0( "currentProcessedLevel: password: ", password ) )
   
   conn <- topconnect::db( db_user="root", dbname=dbName, host=hostname, password=password )
   # If an entry doesn't exist, make one.
