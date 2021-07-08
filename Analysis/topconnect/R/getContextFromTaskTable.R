@@ -21,10 +21,27 @@ getContextFromTaskTable <- function( conn, ... ) {
   #         experiment='testProject', centerTime=0,
   #         signalType='AP',iterationType='directory')  
   #  
-  args <- unlist( list(...) )
+
+  # This function needs a few variables to allow it to create the 'context' variable.
+  #
+  # What if "..." is an argumentComposite?
+  args <- list(...)
+
   fixedFields <- c('username','nodename','path','taskName','institution','lab','experiment','subject',
                    'iterationType','signalType','centerTime','service','dbName','UUID','hostname','password','')
-    
+  
+  if ( (length(args)==1) & ('argumentComposite' %in% class(args[[1]])) ) {
+    argComp <- args
+    args <- list()
+    for ( fieldname in fixedFields ) {
+      if ( argComp$isValid(fieldname) ) {
+        args <- append( args, argComp$get(fieldname) )  
+      }      
+    }
+  } else {
+    args <- unlist(args)
+  }
+  
   #  1.	Load arguments into a data structure called context.
   print( 'Getting context' )
   context <- list()

@@ -11,12 +11,12 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
   # mysql> create a MySQL table: create table test (a int,b int);
   #
   # In R:
-  # > conn <- dbConnect( MySQL(), user='root', password='', dbname='markdb_projectKoala', host='localhost' )
-  # > fields <- c('a','b','c','d')
-  # > dib <- databaseInsertBuffer( , 'test', fields, 2 )
-  # > dib$insert( c(a=1,b=2,c=3,d=4) )
-  # > dib$insert( c(b=4,a=3,c=5,d=6) )
-  # > dib$insert( c(a=5,b=6,c=7,d=8) )
+  # > conn <- topconnect::db( RMySQL::MySQL(), user='root', password='', dbname='MRE_test', host='localhost' )
+  # > fields <- c('value')
+  # > dib <- databaseInsertBuffer( 'MRE_test', 'test', fields, 2 )
+  # > dib$insert( c(value=1) )
+  # > dib$insert( c(value=2) )
+  # > dib$insert( c(value=3) )
   #
   # In MySQL:
   # mysql> 'select * from test;' should show the first two inserts, but not the last.
@@ -110,6 +110,11 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
     }
   }
   
+  # an alternate call for 'insert'
+  add <- function( values ) {
+    insert( values )
+  }
+  
   flush <- function() {
     #print( "DIB: flush")
     if ( !is.null( updateFields ) ) {
@@ -165,7 +170,7 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
     return( updateLimit )
   }
   
-  obj <- list(initialize=initialize,insert=insert,flush=flush,toString=toString,updateNumber=updateNumber)
+  obj <- list(initialize=initialize,insert=insert,add=add,flush=flush,toString=toString,updateNumber=updateNumber)
   class(obj) <- c('databaseInsertBuffer')
   initialize()
   return( obj )
