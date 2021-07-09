@@ -52,6 +52,8 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
 #    print( updateCount )
     #print( "DIB: insert" )
     fieldnames <- names( values )
+    # Remove any NA values
+    fieldnames <- fieldnames[!is.na(fieldnames)]
     if ( is.null( fieldnames ) ) {
       fieldnames <<- fields
     }
@@ -110,9 +112,16 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
     }
   }
   
-  # an alternate call for 'insert'
+  # "insert" that can accept vectors as well as scalars
   add <- function( values ) {
-    insert( values )
+    
+    # What about fieldnames?!?!?
+    fieldnames <- names(values)
+    fieldnames <- fieldnames[which(!is.na(fieldnames))]
+    for ( v in values ) {
+      names(v) <- fieldnames[1]
+      insert( v )
+    }
   }
   
   flush <- function() {
