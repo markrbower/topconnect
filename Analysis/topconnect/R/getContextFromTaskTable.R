@@ -25,7 +25,20 @@ getContextFromTaskTable <- function( conn, ... ) {
   # This function needs a few variables to allow it to create the 'context' variable.
   #
   # What if "..." is an argumentComposite?
-  args <- list(...)
+  if ( class(args) != 'argumentCompenent' ) {
+    args <- list(...)
+  } else {
+    args <- list(...)
+    args <- unlist( args )
+  } 
+  # Now, "args" is EITHER a list or an argComps!
+  # I don't see that these two structures can be used interchangeably,
+  # so two options are:
+  # 1. a different getContext... for each option,
+  # 2. an access function that works for both lists and argComps structures.
+  #    Could 'parseArg' be re-written to do this?
+  
+  
 
   fixedFields <- c('username','nodename','path','taskName','institution','lab','experiment','subject',
                    'iterationType','signalType','centerTime','service','dbName','UUID','hostname','password','')
@@ -46,7 +59,7 @@ getContextFromTaskTable <- function( conn, ... ) {
   print( 'Getting context' )
   context <- list()
   context$username <- parseArg( args, 'username' )
-  if ( nchar(context$username) == 0 ) {
+  if ( !( "username" %in% names(context) ) ) {
     context$username <- unname( Sys.info()['user'] )
   }
   context$nodename <- unname( Sys.info()['nodename'] )
@@ -62,10 +75,12 @@ getContextFromTaskTable <- function( conn, ... ) {
   context$service <- parseArg( args, 'service' )
   context$db_user <- parseArg( args, 'db_user' )
   context$hostname <- parseArg( args, 'hostname' )
-  if ( nchar( context$service ) == 0 ) { # try 'dbName'
+  if ( !( "service" %in% names(context) ) ) { # try 'dbName'
     context$service <- parseArg( args, 'dbName' )
   }
-  context$UUID <- parseArg( args, 'UUID' )
+  if ( ( "UUID" %in% names(args) ) ) { # try 'dbName'
+    context$UUID <- parseArg( args, 'UUID' )
+  }
   # How to handle parameters?
   # Look at the names of the args and find outliers to fixed fields
   '%!in%' <- function(x,y)!('%in%'(x,y)) # https://stackoverflow.com/questions/5831794/opposite-of-in
@@ -103,59 +118,65 @@ getContextFromTaskTable <- function( conn, ... ) {
         if ( notDefined( context$UUID  ) ) { context$UUID <- uuid::UUIDgenerate() }
      }
    } else { # find the entry and upload the UUID
-     query <- paste0('select UUID from tasks where institution=\'',context$institution,'\' and ')
-     query <- paste0( query, 'experiment=\'',context$experiment,'\' and ')
-     query <- paste0( query, 'subject=\'',context$subject,'\' and ')
-     query <- paste0( query, 'lab=\'',context$lab,'\' and ')
-     query <- paste0( query, 'service=\'',context$service,'\' and ')
-     query <- paste0( query, 'taskName=\'',context$taskName,'\' and ')
-     query <- paste0( query, 'signalType=\'',context$signalType,'\' and ')
-     query <- paste0( query, 'centertime=\'',context$centerTime,'\';')
+     query <- paste0('select UUID from tasks where institution=\'',parseArg(args,'institution'),'\' and ')
+     query <- paste0( query, 'experiment=\'',parseArg(args,'experiment'),'\' and ')
+     query <- paste0( query, 'subject=\'',parseArg(args,'subject'),'\' and ')
+     query <- paste0( query, 'lab=\'',parseArg(args,'lab'),'\' and ')
+     query <- paste0( query, 'service=\'',parseArg(args,'service'),'\' and ')
+     query <- paste0( query, 'taskName=\'',parseArg(args,'taskName'),'\' and ')
+     query <- paste0( query, 'signalType=\'',parseArg(args,'signalType'),'\' and ')
+     query <- paste0( query, 'centertime=\'',parseArg(args,'centerTime'),'\';')
      rs <- DBI::dbGetQuery( conn, query )
      if ( nrow(rs) == 1 ) {
        context$UUID = rs$UUID
      }
    }
-  # Validate the context and reject any context that does not contain all required fields.
-  if ( topconnect::insufficientIdentifiersPresent( context ) ) {
-    return
-  }
+   # Validate the context and reject any context that does not contain all required fields.
+   if ( topconnect::insufficientIdentifiersPresent( context ) ) {
+     return
+   }
   
-  # Does this still matter?!
-  # Unpack the parameters and make separate entries for each.
-  if ( !stringi::stri_isempty(context$parameters) ) {
-    parmString <- unlist( stringr::str_split( context$parameters, ':::' ) )
-    for ( ps in parmString ) {
-      parts <- unlist(stringr::str_split( ps, '::' ) )
-      str <- paste0( 'context[[\"', parts[1], '\"]] = \'', parts[2], '\'' )
-      eval(parse(text=str))
-    }
+   # Does this still matter?!
+   # Unpack the parameters and make separate entries for each.
+   if ( ( "parameters" %in% names(args) ) ) {
+     parmString <- unlist( stringr::str_split( parseArg( args, 'parameters' ), ':::' ) )
+     for ( ps in parmString ) {
+       parts <- unlist(stringr::str_split( ps, '::' ) )
+       str <- paste0( 'context[[\"', parts[1], '\"]] = \'', parts[2], '\'' )
+       eval(parse(text=str))
+     }
   }
   
   # If context$UUID is empty, create a new one.
-  if ( notDefined( context$UUID ) | nchar( context$UUID )==0 ) {
+  if ( !( "UUID" %in% names(args) ) ) {
     context$UUID = uuid::UUIDgenerate()    
   }
   
   #  3.	Determine whether this instance exists in the database.
-  query <- paste0( 'select count(*) as count from tasks where UUID=\'', context$UUID, '\';' )
+  query <- paste0( 'select count(*) as count from tasks where UUID=\'', parseArg( args, '' ), '\';' )
   rs <- DBI::dbGetQuery( conn, query )
   if ( rs$count == 0 ) { # This UUID does not exist in the database
     #  ⁃	If not, create the instance in the database
     query <- "insert into tasks (username,nodename,path,taskName,institution,lab,experiment,subject,iterationType,UUID,parameters,signalType,centerTime,service,done) values "
-    query <- paste0( query, "(\'", context$username, "\',\'", context$nodename, "\',\'", context$path, "\',\'", context$taskName, "\', \'", context$institution, "\',\'", context$lab, "\',\'", context$experiment, "\'," )
-    query <- paste0( query, "\'", context$subject, "\',\'", context$iterationType, "\',\'", context$UUID, "\', " )
-    query <- paste0( query, "\'", context$parameters, "\',\'", context$signalType, "\',", context$centerTime, ", " )
-    query <- paste0( query, "\'", context$service, "\', 0 );" )
+    query <- paste0( query, "(\'", parseArg( args, 'username'      ), "\',\'", parseArg( args, 'nodename'  ), "\',\'" )
+    query <- paste0( query, "\'",  parseArg( args, 'path'          ), "\',\'", parseArg( args, 'taskName'  ), "\',\'" )
+    query <- paste0( query, "\'",  parseArg( args, 'institution'   ), "\',\'", parseArg( args, 'lab'       ), "\',\'" )
+    query <- paste0( query, "\'",  parseArg( args, 'experiment'    ), "\',\'", parseArg( args, 'subject'   ), "\',\'" )
+    query <- paste0( query, "\'",  parseArg( args, 'iterationType' ), "\',\'", parseArg( args, 'UUID'      ), "\',\'" )
+    query <- paste0( query, "\'",  parseArg( args, 'parameters'    ), "\',\'", parseArg( args, 'signalType'), "\'," )
+    query <- paste0( query,        parseArg( args, 'centerTime'    ), ",\'",   parseArg( args, 'service'   ), "\', 0);" )
     rs <- DBI::dbGetQuery( conn, query )
   } else { # This UUID does exist in the database 
     #  ⁃	If so, update the database values. Perhaps updating the 'modified' value is the most important aspect of this step.
     query <- paste0( "update tasks set modified=now(), " )
-    query <- paste0( query, "username=\'", context$username, "\', nodename=\'", context$nodename, "\', path=\'", context$path, "\', taskName=\'", context$taskName, "\', institution=\'", context$institution, "\', lab=\'", context$lab, "\', experiment=\'", context$experiment, "\', " )
-    query <- paste0( query, "subject=\'", context$subject, "\',iterationType=\'",context$iterationType, "\',UUID=\'", context$UUID, "\', " )
-    query <- paste0( query, "parameters=\'", context$parameters, "\', signalType=\'", context$signalType, "\',centerTime=", context$centerTime, ", " )
-    query <- paste0( query, "service=\'", context$service, "\',done=0 " )
-    query <- paste0( query, "where UUID=\'", context$UUID, "\';" )
+    query <- paste0( query, "username=\'",    parseArg( args, 'username'), "\',   nodename=\'",     parseArg( args, 'nodename'), "\'," )
+    query <- paste0( query, "path=\'",        parseArg( args, 'path'), "\',       taskName=\'",     parseArg( args, 'taskName'), "\'," )
+    query <- paste0( query, "institution=\'", parseArg( args, 'institution'), "\', lab=\'",         parseArg( args, 'lab'), "\'," )
+    query <- paste0( query, "experiment=\'",  parseArg( args, 'experiment'), "\', UUID=\'",         parseArg( args, 'UUID'), "\'," )
+    query <- paste0( query, "subject=\'",     parseArg( args, 'subject'), "\',    iterationType=\'",parseArg( args, 'iterationType'), "\'," )
+    query <- paste0( query, "parameters=\'",  parseArg( args, 'parameters'), "\', signalType=\'",   parseArg( args, 'signalType'), "\'," )
+    query <- paste0( query, "centerTime=",    parseArg( args, 'centerTime'), ",   service=\'",      parseArg( args, 'service'), "\', done=0 " )
+    query <- paste0( query, "where UUID=\'",  parseArg( args, 'UUID'), "\';" )
     print( query )
     rs <- DBI::dbGetQuery( conn, query )
   }

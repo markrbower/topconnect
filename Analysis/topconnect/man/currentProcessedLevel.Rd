@@ -4,7 +4,7 @@
 \alias{currentProcessedLevel}
 \title{currentProcessedLevel}
 \usage{
-currentProcessedLevel(dbName, table, subject, channel, suid, timestamp)
+currentProcessedLevel(compArgs, case, expectedProcessLevel)
 }
 \description{
 currentProcessedLevel

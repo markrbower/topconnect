@@ -1,9 +1,10 @@
-appendFileMetadata <- function( fileename, ac ) {
-  db_provider <- ac$findClass( 'databaseProvider' )
-  conn <- db_provider$get_connection()
-  argCompMet <- RFactories::metadataInformer( ac )
-  argComp$add( argCompMet )
+appendFileMetadata <- function( compArgs, filename ) {
+  #' @export
+  db_provider <- compArgs$findClass( 'databaseProvider' )
+  conn <- db_provider$connect()
+  mi <- RFactories::metadataInformer( filename=filename, compArgs=compArgs)
+  compArgs$add( mi )
   DBI::dbDisconnect( conn )
-  return( argComp )
+  return( compArgs )
 }
 

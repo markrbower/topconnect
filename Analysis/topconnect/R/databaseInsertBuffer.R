@@ -127,10 +127,17 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
   flush <- function() {
     #print( "DIB: flush")
     if ( !is.null( updateFields ) ) {
-      updateString <- paste0(updateFields,collapse=",")
-      if ( nchar(updateString) > 0 ) {
-        query <<- paste0( query, " ON DUPLICATE KEY UPDATE ", updateString, "=VALUES(", updateString, ");" )
+      query <<- paste0( query, " ON DUPLICATE KEY UPDATE ", updateFields[1], "=", updateFields[1] )
+      if ( length(updateFields) > 1 ) {
+        for ( idx in seq(2,length(updateFields)) ) {
+          query <<- paste0( query, ", ", updateFields[idx], "=", updateFields[idx] )      
+        }      
       }
+      query <<- paste0( query, ";" )      
+#      updateString <- paste0(updateFields,collapse=",")
+#      if ( nchar(updateString) > 0 ) {
+#        query <<- paste0( query, " ON DUPLICATE KEY UPDATE ", updateString, "=VALUES(", updateString, ");" )
+#      }
     } else {
       query <<- paste0( query, ";" )
     }
@@ -138,11 +145,12 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
     if ( hasValues==1 ) {
 #      print(query)
       tryCatch({
+        #print( "making conn1" )
         conn1 <- topconnect::db( dbname=dbname, host=hostname, db_user=dbuser, password=password )
         DBI::dbGetQuery( conn1, query )
       }, error=function(e) {
         tryCatch({
-          print( "Second try" )
+          #print( "Second try" )
           write( query, file="DIB_error1.txt", append=TRUE)
           print( query )
           
@@ -160,14 +168,27 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
             print( 'Failed to connect to database.')
             print( e )
           }, finally={
+            print( "Clearing conn3" )
             DBI::dbDisconnect( conn3 )
           }) # Third
         }, finally={
+          print( "Clearing conn2" )
           DBI::dbDisconnect( conn2 )
         }) # Second
       }, finally={
+        #print( "Clearing conn1" )
         DBI::dbDisconnect( conn1 )
       }) # First
+    }
+  }
+  
+  # For use with buckets::bucket
+  # This assumes the input is a dataframe.
+  run <- function( df ) {
+    if ( !is.null(df) ) {
+      for ( idx in 1:nrow(df) ) {
+        insert( df[idx,])
+      }
     }
   }
   
@@ -179,7 +200,7 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
     return( updateLimit )
   }
   
-  obj <- list(initialize=initialize,insert=insert,add=add,flush=flush,toString=toString,updateNumber=updateNumber)
+  obj <- list(initialize=initialize,insert=insert,add=add,flush=flush,run=run,toString=toString,updateNumber=updateNumber)
   class(obj) <- c('databaseInsertBuffer')
   initialize()
   return( obj )

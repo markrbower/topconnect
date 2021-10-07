@@ -4,7 +4,16 @@
 \alias{databaseInsertBuffer}
 \title{databaseInsertBuffer}
 \usage{
-databaseInsertBuffer(dbName, table, fields, limit, updates = NULL)
+databaseInsertBuffer(
+  dbName,
+  table,
+  fields,
+  limit,
+  updates = NULL,
+  dbuser = "root",
+  host = "localhost",
+  password = ""
+)
 }
 \description{
 databaseInsertBuffer
