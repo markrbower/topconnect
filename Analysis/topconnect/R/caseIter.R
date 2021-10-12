@@ -10,6 +10,11 @@ caseIter <- function( ac ) {
   if ( nrow( taskRecordset) == 0 ) { # analyze the entire data file
     query <- paste0("select * from tasks where subject=\'",ac$get('subject'),"\' order by centerTime;")
     taskRecordset <- DBI::dbGetQuery( conn, query )
+    # If the result is empty, then create a new entry to be returned.
+    topconnect:::insertNewEntryIntoTasks( conn, ac )
+    # Re-run the query to get the new result
+    query <- paste0("select * from tasks where subject=\'",ac$get('subject'),"\' order by centerTime;")
+    taskRecordset <- DBI::dbGetQuery( conn, query )
   }
   DBI::dbDisconnect( conn )
   #print( nrow( taskRecordset) )
