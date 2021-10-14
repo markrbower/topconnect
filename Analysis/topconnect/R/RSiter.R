@@ -7,6 +7,7 @@ RSiter <- function( resultset ) {
   library( iterators )
   library( itertools )
   
+  print( paste0( "nrows in resultset: ", nrow(resultset) ) )
   it <- iter( resultset, by="row" )
   
   nextEl <- function() {

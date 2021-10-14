@@ -7,21 +7,20 @@ currentProcessedLevel <- function( compArgs, case, expectedProcessLevel ) {
 
   T <- case$centerTime # Assumes this comes from an SQL select from the "tasks" table
 
-  #print( paste0( "currentProcessedLevel: dbName: ", dbName ) )
-  #print( paste0( "currentProcessedLevel: hostname: ", hostname ) )
-  #print( paste0( "currentProcessedLevel: password: ", password ) )
-  
   dbp <- compArgs$findClass('databaseProvider')
   conn <- dbp$connect()
   table <- compArgs$get('progress')
+  print( paste0( "currentProcessedLevel: ", table ) )
   subject <- compArgs$get('subject')
   session <- case$UUID
   channel <- tools::file_path_sans_ext( compArgs$get('channel' ) )
+  print( channel )
   timestamp <- compArgs$get('centerTime')
   
   #conn <- topconnect::db( db_user="root", dbname=dbName, host=hostname, password=password )
   # If an entry doesn't exist, make one.
   query <- paste0( "select count(*) as count from ", table, " where subject=\'", subject,"\' and channel=\'", channel,"\' and session=\'", session, "\' and timestamp=", timestamp,";" )
+  print( query )
   rs <- DBI::dbGetQuery( conn, query )
   count <- rs$count
   if ( count==0 ) {
