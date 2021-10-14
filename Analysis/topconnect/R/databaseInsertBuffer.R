@@ -185,7 +185,7 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
   # For use with buckets::bucket
   # This assumes the input is a dataframe.
   run <- function( df ) {
-    if ( !is.null(df) ) {
+    if ( !is.null(df) & length(df)>0 ) {
       for ( idx in 1:nrow(df) ) {
         insert( df[idx,])
       }
