@@ -186,9 +186,14 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
   # This assumes the input is a dataframe.
   run <- function( df ) {
     if ( !is.null(df) & length(df)>0 ) {
-      for ( idx in 1:nrow(df) ) {
-        insert( df[idx,])
-      }
+      tryCatch({
+        for ( idx in 1:nrow(df) ) {
+          insert( df[idx,])
+        }
+      },
+      error=function(cond) {
+        print( paste0( "WARN: Empty database entry"))  
+      })
     }
   }
   
