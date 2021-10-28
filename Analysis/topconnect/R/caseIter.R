@@ -23,7 +23,26 @@ caseIter <- function( ac ) {
     print( "leaving")
   }
   DBI::dbDisconnect( conn )
-  print( "nrow in taskRecordset: ", nrow(taskRecordset))
+  print( paste0( "nrow in taskRecordset: ", nrow(taskRecordset)) )
+  # Determine whether a given case contains a "parameters" entry and convert these to fields.
+  if ( "parameters" %in% names(taskRecordset) ) {
+    new_taskRecordset <- data.frame()
+    for ( idx in seq(1,nrow(taskRecordset)) ) {
+      case <- taskRecordset[idx,]
+      if ( "parameters" %in% names(case) ) {
+        parmString <- unlist( stringr::str_split( case['parameters'], ':::' ) )
+        for ( ps in parmString ) {
+          parts <- unlist(stringr::str_split( ps, '::' ) )
+          str <- paste0( 'case <- cbind( case, ', parts[1], '=', parts[2], ')' )
+          eval(parse(text=str))
+        }
+        new_taskRecordset <- rbind( new_taskRecordset, case )
+      }
+    }
+    print( "Only using the first three cases for testing!" )
+    taskRecordset <- new_taskRecordset[1:3,]
+  }
+  
   #print( nrow( taskRecordset) )
   topconnect::RSiter( taskRecordset )
 }

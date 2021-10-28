@@ -1,4 +1,4 @@
-databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, dbuser='root', host='localhost', password='' ) {
+databaseInsertBuffer <- function( dbName, dbTable, fields, limit, updates=NULL, dbuser='root', host='localhost', password='' ) {
   #' databaseInsertBuffer
   #' 
   #' @export
@@ -27,7 +27,7 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
   # ... showing the partial query buffering the next values to be stored.
   options(stringsAsFactors = FALSE);
 
-  insertTable <- table
+  dbTtable <- dbTable
   insertFields <- fields
   updateFields <- updates
   updateCount <- 0
@@ -40,7 +40,7 @@ databaseInsertBuffer <- function( dbName, table, fields, limit, updates=NULL, db
   password <- password
   
   initialize <- function() {
-    query <<- paste0( "insert into ", insertTable, " (" )
+    query <<- paste0( "insert into ", dbTtable, " (" )
     query <<- paste0( query, paste0( fields, collapse="," ) )
     query <<- paste0( query, ") values " )
     hasValues <<- 0

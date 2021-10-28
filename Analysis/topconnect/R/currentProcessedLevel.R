@@ -15,7 +15,7 @@ currentProcessedLevel <- function( compArgs, case, expectedProcessLevel ) {
   session <- case$UUID
   channel <- tools::file_path_sans_ext( compArgs$get('channel' ) )
   print( channel )
-  timestamp <- compArgs$get('centerTime')
+  timestamp <- case['centerTime']
   
   #conn <- topconnect::db( db_user="root", dbname=dbName, host=hostname, password=password )
   # If an entry doesn't exist, make one.

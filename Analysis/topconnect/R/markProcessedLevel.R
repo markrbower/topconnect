@@ -14,7 +14,7 @@ markProcessedLevel <- function( compArgs, case, newProcessLevel ) {
   #print( "In markAsProcessed" )
   dbp <- compArgs$findClass('databasepProvider')
   conn <- dbp$getConnection()
-  query <- paste0( 'update ', table, ' set done=',flag,' where subject=\'',subject,'\' AND session=\'',suid,'\' AND channel=\'',channel,'\' AND timestamp=',timestamp,';' )
+  query <- paste0( 'update ', table, ' set done=',flag,' where subject=\'',subject,'\' AND session=\'',suid,'\' AND channel=\'',channel,'\' AND timestamp=', case['centerTime'],';' )
   DBI::dbGetQuery( conn, query )
   DBI::dbDisconnect( conn )
   

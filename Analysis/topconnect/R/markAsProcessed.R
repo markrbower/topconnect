@@ -18,7 +18,7 @@ markAsProcessed <- function( compArgs, case, newProcessLevel ) {
   subject <- compArgs$get('subject')
   session <- case$UUID
   channel <- compArgs$get('channel')
-  timestamp <- compArgs$get('centerTime')
+  timestamp <- case['centerTime']
   
   query <- paste0( 'update ', table, ' set done=',newProcessLevel,' where subject=\'',subject,'\' AND session=\'',session,'\' AND channel=\'',channel,'\' AND timestamp=',timestamp,';' )
   DBI::dbGetQuery( conn, query )

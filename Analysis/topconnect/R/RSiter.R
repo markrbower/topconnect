@@ -8,14 +8,17 @@ RSiter <- function( resultset ) {
   library( itertools )
   
   print( paste0( "nrows in resultset: ", nrow(resultset) ) )
-  it <- iter( resultset, by="row" )
+  it <- itertools::ihasNext( iterators::iter( resultset, by="row" ) )
   
   nextEl <- function() {
-    n <- nextElem(it)
+    n <- iterators::nextElem(it)
+  }
+  
+  hasNx <- function() {
+    return( itertools::hasNext(it) )
   }
 
-  obj <- list(nextElem=nextEl,hasNext=ihasNext)
-  obj <- ihasNext(it)
+  obj <- list(nextElem=nextEl,hasNext=hasNx)
   class(obj) <- c('ihasNext', 'abstractiter', 'iter', 'RSiter')
   attr( obj, "size" ) <- nrow( resultset )
   return( obj )
