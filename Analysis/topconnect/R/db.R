@@ -14,7 +14,6 @@ db <- function( ... ) {
   # vault_key : the keyword for the vault secret (default: <project>_password)
   # host: the name of the database computer/server (default: localhost)
   # dbname: the name of the database to access (default: <project>)
-  library( SingletonsInR )
 
   args <- list( ... )
   # Defaults
@@ -57,25 +56,26 @@ db <- function( ... ) {
                             user=db_user,password=password,
                             host=host,dbname=dbname)
   } else { # First, look for a Singleton containing values
-    context <- SingletonInR$new()
-    #print( paste0( "db: ", names(context) ) )
-    contextNames <- names( context$value )
-    if ( 'host' %in% contextNames & 'password' %in% contextNames ) {
-      host <- context$value$host
-      password <- context$value$password
-      #print( host )
-      #print( password )
-      #print( db_user )
-      #print( dbname )
-      conn <- DBI::dbConnect( RMySQL::MySQL(),
-                              user=db_user,password=password,
-                              host=host,dbname=dbname)
-    } else { # try to get info from the secret_vault
-      #print( paste0( "db: getting password from valut"))
-      conn <- DBI::dbConnect( RMySQL::MySQL(),
-                              user=db_user,password=topsecret::get(name=vault_key),
-                              host=host,dbname=dbname)
-    }
+    cat( "ERROR: topconnect: Please supply a password for the database.\n" )
+#    context <- SingletonInR$new()
+#    #print( paste0( "db: ", names(context) ) )
+#    contextNames <- names( context$value )
+#    if ( 'host' %in% contextNames & 'password' %in% contextNames ) {
+#      host <- context$value$host
+#      password <- context$value$password
+#      #print( host )
+#      #print( password )
+#      #print( db_user )
+#      #print( dbname )
+#      conn <- DBI::dbConnect( RMySQL::MySQL(),
+#                              user=db_user,password=password,
+#                              host=host,dbname=dbname)
+#    } else { # try to get info from the secret_vault
+#      #print( paste0( "db: getting password from valut"))
+#      conn <- DBI::dbConnect( RMySQL::MySQL(),
+#                              user=db_user,password=topsecret::get(name=vault_key),
+#                              host=host,dbname=dbname)
+#    }
   }
   
   return( conn )
