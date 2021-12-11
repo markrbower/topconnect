@@ -1,4 +1,4 @@
-databaseUpdateBuffer <- function( conn, update_table, updateLimit, static_fields, static_values, identity_field, update_field ) {
+databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fields, static_values, identity_field, update_field, dbuser='root', host='localhost', password='' ) {
   #
   #' @export
   #
@@ -21,7 +21,7 @@ databaseUpdateBuffer <- function( conn, update_table, updateLimit, static_fields
   # First, fill the table:
   " COMMENT
   fields <- c('a','b','c','d')
-  dib <- databaseInsertBuffer( conn, 'test', fields, 2 )
+  dib <- databaseInsertBuffer( 'testDB', 'test', fields, 2 )
   dib$insert( c(a=1,b=2,c=3,d=4) )
   dib$insert( c(b=2,a=1,c=5,d=5) )
   dib$insert( c(a=2,b=2,c=7,d=6) )
@@ -33,7 +33,7 @@ databaseUpdateBuffer <- function( conn, update_table, updateLimit, static_fields
   #
   # Second, update the table:
   " COMMENT
-  dub <- databaseUpdateBuffer( conn, 'test', 2, c('a','b'), c(1,2), 'c', 'd' )
+  dub <- databaseUpdateBuffer( 'testDB', 'test', 2, c('a','b'), c(1,2), 'c', 'd' )
   dub$update( 3, 18 )
   dub$update( 5, 19 )
   "
@@ -48,29 +48,33 @@ databaseUpdateBuffer <- function( conn, update_table, updateLimit, static_fields
 #  WHEN id = 1 THEN 'Great Expectations';
   
   initialize <- function() {
-    static_str <<- ""
+    static_str <<- " WHEN "
     if ( !is.null(static_fields) ) {
-  #    print( static_fields )
-  #    print( static_values )
-      static_str <<- paste( paste0( static_fields, "=", static_values, " AND" ), collapse=' ' )
-  #    print( static_str )
-    }
+      for ( idx in seq_along(static_fields) ) {
+        if ( class(static_values[[idx]]) == "character" ) {
+          static_str <<- paste0( static_str, static_fields[[idx]],"='", static_values[[idx]], "' AND " )
+        } else {
+          static_str <<- paste0( static_str, static_fields[[idx]],"=", static_values[[idx]], " AND " )
+        }
+      }
+    }    
     query <<- paste0( "UPDATE ", update_table, " SET ", update_field, " = CASE" )
   }    
 
   update <- function( identity_value, update_value ) {
     if ( nchar(static_str) > 0 ) {
-      str <- paste0( " WHEN ", static_str, " ", identity_field,"=", identity_value, " THEN ", update_value )
+      str <- paste0( static_str, " ", identity_field,"=", identity_value, " THEN ", update_value )
 #    print(str)
     } else {
       if ( class(identity_field) == "character" ) {
-        str <- paste0( " WHEN ", identity_field,"='", identity_value, "' THEN '", update_value, "'" )
+        str <- paste0( identity_field,"='", identity_value, "' THEN '", update_value, "'" )
       } else {
-        str <- paste0( " WHEN ", identity_field,"=", identity_value, " THEN ", update_value )
+        str <- paste0( identity_field,"=", identity_value, " THEN ", update_value )
       }
     }
     query <<- paste0( query, str  )
     updateCount <<- updateCount + 1
+    print( paste0( "DUB: ", updateCount ) )
     if ( updateCount %% updateLimit == 0 ) {
       flush()
       initialize()
@@ -80,15 +84,65 @@ databaseUpdateBuffer <- function( conn, update_table, updateLimit, static_fields
   flush <- function() {
     query <<- paste0( query, " ELSE ", update_field, " END;" )
     print(query)
-    DBI::dbSendQuery( conn, query )
+
+    tryCatch({
+      #print( "making conn1" )
+      conn1 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )
+      DBI::dbGetQuery( conn1, query )
+    }, error=function(e) {
+      tryCatch({
+        #print( "Second try" )
+        write( query, file="DIB_error1.txt", append=TRUE)
+        print( query )
+        
+        conn2 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )
+        DBI::dbGetQuery( conn2, query )
+      }, error=function(e) {
+        tryCatch({
+          print( "Third try" )
+          write( query, file="DIB_error2.txt", append=TRUE)
+          print( query )
+          
+          conn3 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )            
+          DBI::dbGetQuery( conn3, query )
+        }, error=function(e) {
+          print( 'Failed to connect to database.')
+          print( e )
+        }, finally={
+          print( "Clearing conn3" )
+          DBI::dbDisconnect( conn3 )
+        }) # Third
+      }, finally={
+        print( "Clearing conn2" )
+        DBI::dbDisconnect( conn2 )
+      }) # Second
+    }, finally={
+      #print( "Clearing conn1" )
+      DBI::dbDisconnect( conn1 )
+    }) # First
   }
   
+  # This assumes the input is a dataframe.
+  run <- function( df ) {
+    if ( !is.null(df) & length(df)>0 ) {
+      tryCatch({
+        for ( idx in 1:nrow(df) ) {
+          update( df$identityValue[idx], df$updateValue[idx] )
+        }
+      },
+      error=function(cond) {
+        print( paste0( "WARN: Empty database entry"))  
+      })
+    }
+    return(df)
+  }
+
   toString <- function() {
     query
   }
   
-  obj <- list(initialize=initialize,update=update,flush=flush,toString=toString)
-  class(obj) <- c('databaseInsertBuffer')
+  obj <- list(initialize=initialize,update=update,flush=flush,run=run,toString=toString)
+  class(obj) <- c('databaseUpdateBuffer')
   initialize()
   return( obj )
 }

@@ -104,7 +104,7 @@ databaseInsertBuffer <- function( dbName, dbTable, fields, limit, updates=NULL, 
     query <<- paste0( query, str  )
     query <<- paste0( query, ")" )
     updateCount <<- updateCount + 1
-    #print( paste0( "DIB: ", updateCount ) )
+#    print( paste0( "DIB: ", updateCount ) )
     if ( updateCount %% updateLimit == 0 ) {
 #      print( updateCount )
       flush()
@@ -182,7 +182,6 @@ databaseInsertBuffer <- function( dbName, dbTable, fields, limit, updates=NULL, 
     }
   }
   
-  # For use with buckets::bucket
   # This assumes the input is a dataframe.
   run <- function( df ) {
     if ( !is.null(df) & length(df)>0 ) {
@@ -195,6 +194,7 @@ databaseInsertBuffer <- function( dbName, dbTable, fields, limit, updates=NULL, 
         print( paste0( "WARN: Empty database entry"))  
       })
     }
+    return(df)
   }
   
   toString <- function() {
