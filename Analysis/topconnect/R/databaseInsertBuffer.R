@@ -57,7 +57,7 @@ databaseInsertBuffer <- function( dbName, dbTable, fields, limit, updates=NULL, 
     if ( is.null( fieldnames ) ) {
       fieldnames <<- fields
     }
-    if ( updateCount %% updateLimit > 0 ) {
+    if ( hasValues > 0 ) {
       query <<- paste0( query, "," )
     }
     
@@ -97,6 +97,7 @@ databaseInsertBuffer <- function( dbName, dbTable, fields, limit, updates=NULL, 
     # Replace "NA" with "null"
     str <- stringr::str_replace_all( str, "NA", "null" )
     str <- stringr::str_replace_all( str, "NaN", "null" )
+    str <- stringr::str_replace_all( str, "Inf", "null" )
     hasValues <<- 1
     
 #    query <<- paste0( query, paste0( paste0( names(values), "=", unlist(values) ), collapse="," ) )
@@ -141,6 +142,7 @@ databaseInsertBuffer <- function( dbName, dbTable, fields, limit, updates=NULL, 
     } else {
       query <<- paste0( query, ";" )
     }
+    
     #print( paste0( "DIB: flush: ", dbname ) )
     if ( hasValues==1 ) {
 #      print(query)
@@ -170,6 +172,7 @@ databaseInsertBuffer <- function( dbName, dbTable, fields, limit, updates=NULL, 
           }, finally={
             print( "Clearing conn3" )
             DBI::dbDisconnect( conn3 )
+            initialize()
           }) # Third
         }, finally={
           print( "Clearing conn2" )
@@ -184,15 +187,15 @@ databaseInsertBuffer <- function( dbName, dbTable, fields, limit, updates=NULL, 
   
   # This assumes the input is a dataframe.
   run <- function( df ) {
-    if ( !is.null(df) & length(df)>0 ) {
-      tryCatch({
-        for ( idx in 1:nrow(df) ) {
+    if ( !is.null(df) & nrow(df)>0 ) {
+      for ( idx in 1:nrow(df) ) {
+        tryCatch({
           insert( df[idx,])
-        }
-      },
-      error=function(cond) {
-        print( paste0( "WARN: Empty database entry"))  
-      })
+        }, error=function(cond) {
+          print( paste0( "WARN: Insert database error"))
+          print(cond)
+        })
+      }
     }
     return(df)
   }

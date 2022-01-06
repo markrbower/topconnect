@@ -1,5 +1,9 @@
-caseIter <- function( ac ) {
+caseIter <- function( ac, nbrCases=0 ) {
   #
+  # Inputs:
+  #   ac - compArgs object
+  #   nbrCases - if 0, then all cases are computed
+  #                 > 0, then
   #
   #' @export
   #
@@ -14,7 +18,6 @@ caseIter <- function( ac ) {
     print( query )
     taskRecordset <- DBI::dbGetQuery( conn, query )
     # If the result is empty, then create a new entry to be returned.
-    print( "adding")
     topconnect:::insertNewEntryIntoTasks( conn, ac )
     # Re-run the query to get the new result
     query <- paste0("select * from tasks where subject=\'",ac$get('subject'),"\' order by centerTime;")
@@ -39,11 +42,23 @@ caseIter <- function( ac ) {
         new_taskRecordset <- rbind( new_taskRecordset, case )
       }
     }
-    print( "Only using the first three cases for testing!" )
-    taskRecordset <- new_taskRecordset[1:3,]
+#    print( "Only using the first three cases for testing!" )
+#    taskRecordset <- new_taskRecordset[1:3,]
   }
   
   #print( nrow( taskRecordset) )
-  topconnect::RSiter( taskRecordset )
+  N <- nrow(taskRecordset)
+  if ( nbrCases == 0 ) {
+    topconnect::RSiter( taskRecordset )
+  } else if ( nbrCases == 1 ) {
+    topconncet::RSiter( taskRecordset[ runif( 1, 1, N ), ] )
+  } else {  
+    N <- nrow(taskRecordset)
+    dN <- N / (nbrCases-1)
+    t <- round( c( seq( 1, N, dN ), N) )
+    t <- unique( t )
+    topconnect::RSiter( taskRecordset[ t, ] )
+  }
 }
+
 

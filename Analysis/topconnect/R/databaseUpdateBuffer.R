@@ -41,8 +41,13 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
   # In MySQL:
   # > select * from test; # The values for 'd' should NOW be 18 and 19.
   #
+  library(stringr)
+  options( scipen = 999 )
+  
   updateCount <- 0
   query <- ''
+  static_str <- ''
+  hasData <- 0
 
 #  UPDATE mytable SET title = CASE
 #  WHEN id = 1 THEN 'Great Expectations';
@@ -59,6 +64,7 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
       }
     }    
     query <<- paste0( "UPDATE ", update_table, " SET ", update_field, " = CASE" )
+    hasData <<- 0
   }    
 
   update <- function( identity_value, update_value ) {
@@ -72,9 +78,16 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
         str <- paste0( identity_field,"=", identity_value, " THEN ", update_value )
       }
     }
+    
+    # Replace "NA" with "null"
+    str <- stringr::str_replace_all( str, "NA", "null" )
+    str <- stringr::str_replace_all( str, "NaN", "null" )
+    str <- stringr::str_replace_all( str, "Inf", "null" )
+    
     query <<- paste0( query, str  )
     updateCount <<- updateCount + 1
-    print( paste0( "DUB: ", updateCount ) )
+    hasData <<- 1
+#    print( paste0( "DUB: ", updateCount ) )
     if ( updateCount %% updateLimit == 0 ) {
       flush()
       initialize()
@@ -82,59 +95,70 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
   }
   
   flush <- function() {
-    query <<- paste0( query, " ELSE ", update_field, " END;" )
-    print(query)
+    if ( hasData == 1 ) {
+      query <<- paste0( query, " ELSE ", update_field, " END;" )
 
-    tryCatch({
-      #print( "making conn1" )
-      conn1 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )
-      DBI::dbGetQuery( conn1, query )
-    }, error=function(e) {
       tryCatch({
-        #print( "Second try" )
-        write( query, file="DIB_error1.txt", append=TRUE)
-        print( query )
-        
-        conn2 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )
-        DBI::dbGetQuery( conn2, query )
+        #print( "making conn1" )
+        conn1 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )
+        DBI::dbGetQuery( conn1, query )
       }, error=function(e) {
         tryCatch({
-          print( "Third try" )
-          write( query, file="DIB_error2.txt", append=TRUE)
-          print( query )
+          #print( "Second try" )
+          write( query, file="DIB_error1.txt", append=TRUE)
+          #        print( query )
           
-          conn3 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )            
-          DBI::dbGetQuery( conn3, query )
+          conn2 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )
+          DBI::dbGetQuery( conn2, query )
         }, error=function(e) {
-          print( 'Failed to connect to database.')
-          print( e )
+          tryCatch({
+            print( "Third try" )
+            write( query, file="DIB_error2.txt", append=TRUE)
+            print( query )
+            
+            conn3 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )            
+            DBI::dbGetQuery( conn3, query )
+          }, error=function(e) {
+            print( 'Failed to connect to database.')
+            print( e )
+          }, finally={
+            print( "Clearing conn3" )
+            DBI::dbDisconnect( conn3 )
+          }) # Third
         }, finally={
-          print( "Clearing conn3" )
-          DBI::dbDisconnect( conn3 )
-        }) # Third
+          print( "Clearing conn2" )
+          DBI::dbDisconnect( conn2 )
+        }) # Second
       }, finally={
-        print( "Clearing conn2" )
-        DBI::dbDisconnect( conn2 )
-      }) # Second
-    }, finally={
-      #print( "Clearing conn1" )
-      DBI::dbDisconnect( conn1 )
-    }) # First
+        #print( "Clearing conn1" )
+        DBI::dbDisconnect( conn1 )
+      }) # First
+    }
   }
   
   # This assumes the input is a dataframe.
   run <- function( df ) {
-    if ( !is.null(df) & length(df)>0 ) {
-      tryCatch({
-        for ( idx in 1:nrow(df) ) {
-          update( df$identityValue[idx], df$updateValue[idx] )
+#    cat( "In DUB: ", nrow(df), "\n" )
+    if ( !is.null(df) ) {
+      if ( length(df)>0 ) {
+        if ( nrow(df)>0 ) {
+          tryCatch({
+            for ( idx in 1:nrow(df) ) {
+              #          print( df[idx,] )
+              update( df$time[idx], df$clusterid[idx] )
+            }
+          },
+          error=function(cond) {
+            print( paste0( idx, " of ", nrow(df) ) )
+            print( paste0( "WARN: Update database error"))
+            print(cond)
+          })
         }
-      },
-      error=function(cond) {
-        print( paste0( "WARN: Empty database entry"))  
-      })
+      }
     }
-    return(df)
+    flush()
+    initialize()
+    return(nrow(df))
   }
 
   toString <- function() {
