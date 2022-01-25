@@ -34,16 +34,17 @@ caseIter <- function( ac, nbrCases=0 ) {
       case <- taskRecordset[idx,]
       if ( "parameters" %in% names(case) ) {
         parmString <- unlist( stringr::str_split( case['parameters'], ':::' ) )
-        for ( ps in parmString ) {
-          parts <- unlist(stringr::str_split( ps, '::' ) )
-          str <- paste0( 'case <- cbind( case, ', parts[1], '=', parts[2], ')' )
-          eval(parse(text=str))
+        if ( length(parmString) > 3 ) {
+          for ( ps in parmString ) {
+            parts <- unlist(stringr::str_split( ps, '::' ) )
+            str <- paste0( 'case <- cbind( case, ', parts[1], '=', parts[2], ')' )
+            eval(parse(text=str))
+          }
         }
-        new_taskRecordset <- rbind( new_taskRecordset, case )
       }
+      new_taskRecordset <- rbind( new_taskRecordset, case )
     }
-#    print( "Only using the first three cases for testing!" )
-#    taskRecordset <- new_taskRecordset[1:3,]
+    taskRecordset <- new_taskRecordset
   }
   
   #print( nrow( taskRecordset) )
