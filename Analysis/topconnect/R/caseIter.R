@@ -1,15 +1,16 @@
-caseIter <- function( ac, nbrCases=0 ) {
+caseIter <- function( ac, nbrCases=0, vectorCases=NULL ) {
   #
   # Inputs:
   #   ac - compArgs object
   #   nbrCases - if 0, then all cases are computed
   #                 > 0, then
+  #   veectorCases - if not null, this overrides nbrCases.
   #
   #' @export
   #
   # seizure_cases_stuff_here_…  [ Note that cases must be capable of describing individual seizures or entire files ]
   conn <- topconnect::db( db_user=ac$get('user'), project=ac$get('dbname'), host=ac$get('hostname'), password=ac$get('password') )
-  print("conn")
+  print("conn ", conn )
   query <- paste0("select * from tasks where subject=\'",ac$get('subject'),"\' and taskName='validSeizure' order by centerTime;")
   print( query )
   taskRecordset <- DBI::dbGetQuery( conn, query )
@@ -49,17 +50,23 @@ caseIter <- function( ac, nbrCases=0 ) {
   
   #print( nrow( taskRecordset) )
   N <- nrow(taskRecordset)
-  if ( nbrCases == 0 ) {
-    topconnect::RSiter( taskRecordset )
-  } else if ( nbrCases == 1 ) {
-    topconncet::RSiter( taskRecordset[ runif( 1, 1, N ), ] )
-  } else {  
-    N <- nrow(taskRecordset)
-    dN <- N / (nbrCases-1)
-    t <- round( c( seq( 1, N, dN ), N) )
-    t <- unique( t )
-    topconnect::RSiter( taskRecordset[ t, ] )
+  
+  if ( !is.null( vectorCases) ) {
+    topconnect::RSiter( taskRecordset[ vectorCases, ] )
+  } else {
+    if ( nbrCases == 0 ) {
+      topconnect::RSiter( taskRecordset )
+    } else if ( nbrCases == 1 ) {
+      topconncet::RSiter( taskRecordset[ runif( 1, 1, N ), ] )
+    } else {  
+      N <- nrow(taskRecordset)
+      dN <- N / (nbrCases-1)
+      t <- round( c( seq( 1, N, dN ), N) )
+      t <- unique( t )
+      topconnect::RSiter( taskRecordset[ t, ] )
+    }
   }
+
 }
 
 

@@ -14,6 +14,15 @@ db <- function( ... ) {
   # vault_key : the keyword for the vault secret (default: <project>_password)
   # host: the name of the database computer/server (default: localhost)
   # dbname: the name of the database to access (default: <project>)
+  
+  # The following is a non-implemented default case.
+  if(FALSE) {
+  db_user <- 'root'
+  password <- ''
+  host <- 'localhost'
+  dbname <- 'NV'
+  conn <- topconnect::db(db_user=db_user,password=password,host=host,dbname=dbname)
+  }
 
   args <- list( ... )
   # Defaults

@@ -16,6 +16,10 @@ currentProcessedLevel <- function( compArgs, case, expectedProcessLevel ) {
   channel <- tools::file_path_sans_ext( compArgs$get('channel' ) )
   print( channel )
   timestamp <- case['centerTime']
+  if ( is.na(session) | is.na(timestamp) ) {
+    print( "ERROR: topconnect::currentProcesssedLevel encountered a bad case.")
+    return(FALSE)
+  }
   
   #conn <- topconnect::db( db_user="root", dbname=dbName, host=hostname, password=password )
   # If an entry doesn't exist, make one.
