@@ -9,12 +9,10 @@ caseIter <- function( ac, nbrCases=0, vectorCases=NULL ) {
   #' @export
   #
   # seizure_cases_stuff_here_…  [ Note that cases must be capable of describing individual seizures or entire files ]
-  print( paste0( "user: ", ac$get('user') ) )
-  print( paste0( "dbname: ", ac$get('dbname') ) )
-  print( paste0( "hostname: ", ac$get('hostname') ) )
-  print( paste0( "password: ", ac$get('password') ) )
-  conn <- topconnect::db( db_user=ac$get('user'), project=ac$get('dbname'), host=ac$get('hostname'), password=ac$get('password') )
+  db_provider <- ac$findClass( 'databaseProvider' )
+  conn <- db_provider$connect()
   print( paste0( "conn ", !is.null(conn) ) )
+  
   query <- paste0("select * from tasks where subject=\'",ac$get('subject'),"\' and taskName='validSeizure' order by centerTime;")
   print( query )
   taskRecordset <- DBI::dbGetQuery( conn, query )
