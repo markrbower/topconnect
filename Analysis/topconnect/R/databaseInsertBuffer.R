@@ -39,6 +39,12 @@ databaseInsertBuffer <- function( dbName, dbTable, fields, limit, updates=NULL, 
   dbuser <- dbuser
   password <- password
   
+  print( "topconnect::databaseInsertBuffer says ...")
+  print( paste0( "dbName: ", dbname ) )
+  print( paste0( "hostname: ", hostname ) )
+  print( paste0( "dbuser: ", dbuser ) )
+  print( paste0( "password: ", password ) )
+
   initialize <- function() {
     query <<- paste0( "insert into ", dbTtable, " (" )
     query <<- paste0( query, paste0( fields, collapse="," ) )
