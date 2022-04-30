@@ -100,10 +100,10 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
 
       tryCatch({
         print( "making conn1" )
-        print( paste0( "dbname=,", dbname ) )
-        print( paste0( "host=,", host ) )
-        print( paste0( "dbuser=,", dbuser ) )
-        print( paste0( "password=,", password ) )
+        print( paste0( "dbname=", dbname ) )
+        print( paste0( "host=", host ) )
+        print( paste0( "dbuser=", dbuser ) )
+        print( paste0( "password=", password ) )
         conn1 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )
         DBI::dbGetQuery( conn1, query )
       }, error=function(e) {

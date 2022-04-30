@@ -27,8 +27,10 @@ currentProcessedLevel <- function( compArgs, case, expectedProcessLevel ) {
   print( query )
   rs <- DBI::dbGetQuery( conn, query )
   count <- rs$count
+  print( paste0( "topconnect: currentProcessedLevel: count = ", count ) )
   if ( count==0 ) {
     query <- paste0( "insert into ", table, " (subject,session,channel,timestamp,done) values (\'",subject,"\',\'", session, "\',\'", channel, "\', ", timestamp, ",0);" )
+    print( paste0( "topconnect: currentProcessedLevel: query = ", query ) )
     rs <- DBI::dbGetQuery( conn, query )
   }
   
