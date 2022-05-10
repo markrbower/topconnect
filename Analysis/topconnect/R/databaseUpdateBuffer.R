@@ -110,6 +110,11 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
         tryCatch({
           #print( "Second try" )
           write( query, file="DIB_error1.txt", append=TRUE)
+          write( e, file="DIB_error1.txt", append=TRUE)
+          write( dbname, file="DIB_error1.txt", append=TRUE)
+          write( host, file="DIB_error1.txt", append=TRUE)
+          write( dbuser, file="DIB_error1.txt", append=TRUE)
+          write( password, file="DIB_error1.txt", append=TRUE)
           #        print( query )
           
           conn2 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )
