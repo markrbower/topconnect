@@ -48,37 +48,38 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
   query <- ''
   static_str <- ''
   hasData <- 0
+  notFirstFlag <- TRUE
 
 #  UPDATE mytable SET title = CASE
 #  WHEN id = 1 THEN 'Great Expectations';
   
   initialize <- function() {
-    static_str <<- " WHEN "
+    notFirstFlag <<- FALSE 
+    static_str <<- "\nWHERE "
     if ( !is.null(static_fields) ) {
+      if ( notFirstFlag ) {
+        static_str <- paste0( static_str, " AND " )        
+      }
+      notFirstFlag <- TRUE
       for ( idx in seq_along(static_fields) ) {
         if ( class(static_values[[idx]]) == "character" ) {
-          static_str <<- paste0( static_str, static_fields[[idx]],"='", static_values[[idx]], "' AND " )
+          static_str <<- paste0( static_str, static_fields[[idx]],"='", static_values[[idx]], "'" )
         } else {
-          static_str <<- paste0( static_str, static_fields[[idx]],"=", static_values[[idx]], " AND " )
+          static_str <<- paste0( static_str, static_fields[[idx]],"=", static_values[[idx]] )
         }
       }
     }    
-    query <<- paste0( "UPDATE ", update_table, " SET ", update_field, " = CASE" )
+    query <<- paste0( "UPDATE ", update_table, " SET ", update_field, " = \nCASE" )
     hasData <<- 0
   }    
 
   update <- function( identity_value, update_value ) {
-    if ( nchar(static_str) > 0 ) {
-      str <- paste0( static_str, " ", identity_field,"=", identity_value, " THEN ", update_value )
-#    print(str)
+    if ( class(identity_field) == "character" ) {
+      str <- paste0( "\n\tWHEN ", identity_field,"='", identity_value, "' THEN '", update_value, "'" )
     } else {
-      if ( class(identity_field) == "character" ) {
-        str <- paste0( identity_field,"='", identity_value, "' THEN '", update_value, "'" )
-      } else {
-        str <- paste0( identity_field,"=", identity_value, " THEN ", update_value )
-      }
+      str <- paste0( "\n\tWHEN ", identity_field,"=", identity_value, " THEN ", update_value )
     }
-    
+
     # Replace "NA" with "null"
     str <- stringr::str_replace_all( str, "NA", "null" )
     str <- stringr::str_replace_all( str, "NaN", "null" )
@@ -96,7 +97,8 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
   
   flush <- function() {
     if ( hasData == 1 ) {
-      query <<- paste0( query, " ELSE ", update_field, " END;" )
+      query <<- paste0( query, "\n\tELSE ", update_field, "\nEND;" )
+      query <<- paste0( query, static_str, ";" )
 
       tryCatch({
         print( "making conn1" )
@@ -110,11 +112,12 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
         tryCatch({
           #print( "Second try" )
           write( query, file="DIB_error1.txt", append=TRUE)
-          write( e, file="DIB_error1.txt", append=TRUE)
+          write( "1", file="DIB_error1.txt", append=TRUE)
           write( dbname, file="DIB_error1.txt", append=TRUE)
           write( host, file="DIB_error1.txt", append=TRUE)
           write( dbuser, file="DIB_error1.txt", append=TRUE)
           write( password, file="DIB_error1.txt", append=TRUE)
+          write( e, file="DIB_error1.txt", append=TRUE)
           #        print( query )
           
           conn2 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )
