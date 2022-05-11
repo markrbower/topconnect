@@ -57,11 +57,11 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
     notFirstFlag <<- FALSE 
     static_str <<- "\nWHERE "
     if ( !is.null(static_fields) ) {
-      if ( notFirstFlag ) {
-        static_str <- paste0( static_str, " AND " )        
-      }
-      notFirstFlag <- TRUE
       for ( idx in seq_along(static_fields) ) {
+        if ( notFirstFlag ) {
+          static_str <- paste0( static_str, " AND " )        
+        }
+        notFirstFlag <<- TRUE
         if ( class(static_values[[idx]]) == "character" ) {
           static_str <<- paste0( static_str, static_fields[[idx]],"='", static_values[[idx]], "'" )
         } else {
@@ -74,7 +74,7 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
   }    
 
   update <- function( identity_value, update_value ) {
-    if ( class(identity_field) == "character" ) {
+    if ( class(identity_value) == "character" ) {
       str <- paste0( "\n\tWHEN ", identity_field,"='", identity_value, "' THEN '", update_value, "'" )
     } else {
       str <- paste0( "\n\tWHEN ", identity_field,"=", identity_value, " THEN ", update_value )
@@ -97,7 +97,7 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
   
   flush <- function() {
     if ( hasData == 1 ) {
-      query <<- paste0( query, "\n\tELSE ", update_field, "\nEND;" )
+      query <<- paste0( query, "\n\tELSE ", update_field, "\nEND" )
       query <<- paste0( query, static_str, ";" )
 
       tryCatch({
