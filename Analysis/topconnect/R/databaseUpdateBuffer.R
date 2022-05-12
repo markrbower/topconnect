@@ -59,7 +59,7 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
     if ( !is.null(static_fields) ) {
       for ( idx in seq_along(static_fields) ) {
         if ( notFirstFlag ) {
-          static_str <- paste0( static_str, " AND " )        
+          static_str <<- paste0( static_str, " AND " )        
         }
         notFirstFlag <<- TRUE
         if ( class(static_values[[idx]]) == "character" ) {
