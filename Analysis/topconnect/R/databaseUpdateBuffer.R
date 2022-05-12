@@ -55,7 +55,7 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
   
   initialize <- function() {
     notFirstFlag <<- FALSE 
-    static_str <<- "\nWHERE "
+    static_str <<- " WHERE "
     if ( !is.null(static_fields) ) {
       for ( idx in seq_along(static_fields) ) {
         if ( notFirstFlag ) {
@@ -69,15 +69,15 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
         }
       }
     }    
-    query <<- paste0( "UPDATE ", update_table, " SET ", update_field, " = \nCASE" )
+    query <<- paste0( "UPDATE ", update_table, " SET ", update_field, " = CASE" )
     hasData <<- 0
   }    
 
   update <- function( identity_value, update_value ) {
     if ( class(identity_value) == "character" ) {
-      str <- paste0( "\n\tWHEN ", identity_field,"='", identity_value, "' THEN '", update_value, "'" )
+      str <- paste0( " WHEN ", identity_field,"='", identity_value, "' THEN '", update_value, "'" )
     } else {
-      str <- paste0( "\n\tWHEN ", identity_field,"=", identity_value, " THEN ", update_value )
+      str <- paste0( " WHEN ", identity_field,"=", identity_value, " THEN ", update_value )
     }
 
     # Replace "NA" with "null"
@@ -97,7 +97,7 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
   
   flush <- function() {
     if ( hasData == 1 ) {
-      query <<- paste0( query, "\n\tELSE ", update_field, "\nEND" )
+      query <<- paste0( query, " ELSE ", update_field, " END" )
       query <<- paste0( query, static_str, ";" )
 
       tryCatch({
@@ -107,17 +107,18 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
         print( paste0( "dbuser=", dbuser ) )
         print( paste0( "password=", password ) )
         conn1 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )
+        print( "conn1 valid: ", !is.null(conn1) )
         DBI::dbGetQuery( conn1, query )
       }, error=function(e) {
         tryCatch({
           #print( "Second try" )
-          write( query, file="DIB_error1.txt", append=TRUE)
-          write( "1", file="DIB_error1.txt", append=TRUE)
-          write( dbname, file="DIB_error1.txt", append=TRUE)
-          write( host, file="DIB_error1.txt", append=TRUE)
-          write( dbuser, file="DIB_error1.txt", append=TRUE)
-          write( password, file="DIB_error1.txt", append=TRUE)
-          write( e, file="DIB_error1.txt", append=TRUE)
+          write( query, file="DUB_error1.txt", append=TRUE)
+          write( "1", file="DUB_error1.txt", append=TRUE)
+          write( dbname, file="DUB_error1.txt", append=TRUE)
+          write( host, file="DUB_error1.txt", append=TRUE)
+          write( dbuser, file="DUB_error1.txt", append=TRUE)
+          write( password, file="DUB_error1.txt", append=TRUE)
+          write( paste0( "ERROR: ", e ), file="DUB_error1.txt", append=TRUE)
           #        print( query )
           
           conn2 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )
@@ -125,7 +126,7 @@ databaseUpdateBuffer <- function( dbname, update_table, updateLimit, static_fiel
         }, error=function(e) {
           tryCatch({
             print( "Third try" )
-            write( query, file="DIB_error2.txt", append=TRUE)
+            write( query, file="DUB_error2.txt", append=TRUE)
             print( query )
             
             conn3 <- topconnect::db( dbname=dbname, host=host, db_user=dbuser, password=password )            
