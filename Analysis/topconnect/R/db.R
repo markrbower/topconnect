@@ -55,10 +55,10 @@ db <- function( ... ) {
     )
   }
   
-  #print( paste0( "db: user: ", db_user ) )
-  #print( paste0( "db: host: ", host ) )
-  #print( paste0( "db: pass: ", password ) )
-  #print( paste0( "db: dbname: ", dbname ) )
+  print( paste0( "db: user: ", db_user ) )
+  print( paste0( "db: host: ", host ) )
+  print( paste0( "db: pass: ", password ) )
+  print( paste0( "db: dbname: ", dbname ) )
   
   if ( exists( "password" ) ) {
     print( paste( "user: ", db_user ) )
