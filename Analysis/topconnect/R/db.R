@@ -61,6 +61,10 @@ db <- function( ... ) {
   #print( paste0( "db: dbname: ", dbname ) )
   
   if ( exists( "password" ) ) {
+    print( paste( "user: ", db_user ) )
+    print( paste( "password: ", password ) )
+    print( paste( "host: ", host ) )
+    print( paste( "dbname: ",  dbname ) )
     conn <- DBI::dbConnect( RMySQL::MySQL(),
                             user=db_user,password=password,
                             host=host,dbname=dbname)
